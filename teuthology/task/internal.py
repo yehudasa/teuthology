@@ -16,6 +16,7 @@ import subprocess
 from teuthology import lockstatus
 from teuthology import lock
 from teuthology import misc as teuthology
+from teuthology import provision
 from teuthology.parallel import parallel
 from ..orchestra import run
 
@@ -123,8 +124,8 @@ def lock_machines(ctx, config):
                         for guest in vmlist:
                             if guest not in keyscan_out:
                                 log.info('recreating: ' + guest)
-                                lock.destroy_if_vm(ctx, 'ubuntu@' + guest)
-                                lock.create_if_vm(ctx, 'ubuntu@' + guest)
+                                provision.destroy_if_vm(ctx, 'ubuntu@' + guest)
+                                provision.create_if_vm(ctx, 'ubuntu@' + guest)
                 if lock.update_keys(ctx, keyscan_out, current_locks):
                     log.info("Error in virtual machine keys")
                 newscandict = {}
