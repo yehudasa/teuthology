@@ -15,7 +15,7 @@ class Config(object):
     defaults = {
         'archive_base': '/var/lib/teuthworker/archive',
         'ceph_git_base_url': 'https://github.com/ceph/',
-        'lock_server': 'http://teuthology.front.sepia.ceph.com/locker/lock',
+        'lock_server': 'http://paddles.front.sepia.ceph.com/nodes/',
         'max_job_time': 259200,  # 3 days
         'verify_host_keys': True,
         'watchdog_interval': 600,
