@@ -410,6 +410,31 @@ def make_admin_daemon_dir(ctx, remote):
             )
 
 @contextlib.contextmanager
+def cephfs_setup(ctx, config):
+    first_mon = teuthology.get_first_mon(ctx, config)
+    (mon_remote,) = ctx.cluster.only(first_mon).remotes.iterkeys()
+    mdss = ctx.cluster.only(teuthology.is_type('mds'))
+    # If there are any MDSs, then create a filesystem for them to use
+    # Do this last because requires mon cluster to be up and running
+    if mdss.remotes:
+        log.info('Setting up CephFS filesystem...')
+
+        proc = mon_remote.run(args=['sudo', 'ceph', '--format=json-pretty', 'osd', 'lspools'],
+                           stdout=StringIO())
+        pools = json.loads(proc.stdout.getvalue())
+
+        # In case we are using an older Ceph which creates FS by default
+        if 'metadata' in [p['poolname'] for p in pools]:
+            log.info("Metadata pool already exists, skipping")
+        else:
+            mon_remote.run(args=['sudo', 'ceph', 'osd', 'pool', 'create', 'metadata', '256'])
+            mon_remote.run(args=['sudo', 'ceph', 'osd', 'pool', 'create', 'data', '256'])
+            mon_remote.run(args=['sudo', 'ceph', 'mds', 'newfs', 'default', '1', '2'])
+
+    yield
+
+
+@contextlib.contextmanager
 def cluster(ctx, config):
     """
     Handle the creation and removal of a ceph cluster.
@@ -1448,6 +1473,7 @@ def task(ctx, config):
                 )),
         lambda: run_daemon(ctx=ctx, config=config, type_='mon'),
         lambda: run_daemon(ctx=ctx, config=config, type_='osd'),
+        lambda: cephfs_setup(ctx=ctx, config=config),
         lambda: run_daemon(ctx=ctx, config=config, type_='mds'),
         ):
         try:
