@@ -258,9 +258,8 @@ def check_ceph_data(ctx, config):
         )
     failed = False
     for proc in processes:
-        assert isinstance(proc.exitstatus, gevent.event.AsyncResult)
         try:
-            proc.exitstatus.get()
+            proc.wait()
         except run.CommandFailedError:
             log.error('Host %s has stale /var/lib/ceph, check lock and nuke/cleanup.', proc.remote.shortname)
             failed = True
@@ -281,9 +280,8 @@ def check_conflict(ctx, config):
         )
     failed = False
     for proc in processes:
-        assert isinstance(proc.exitstatus, gevent.event.AsyncResult)
         try:
-            proc.exitstatus.get()
+            proc.wait()
         except run.CommandFailedError:
             log.error('Host %s has stale test directory %s, check lock and cleanup.', proc.remote.shortname, testdir)
             failed = True
@@ -574,7 +572,7 @@ def vm_setup(ctx, config):
                 r = remote.run(args=['test', '-e', '/ceph-qa-ready',],
                         stdout=StringIO(),
                         check_status=False,)
-                if r.exitstatus != 0:
+                if r.returncode != 0:
                     p1 = subprocess.Popen(['cat', editinfo], stdout=subprocess.PIPE)
                     p2 = subprocess.Popen(['ssh', '-t', '-t', str(remote), 'sudo', 'sh'], stdin=p1.stdout, stdout=subprocess.PIPE)
                     _, err = p2.communicate()
